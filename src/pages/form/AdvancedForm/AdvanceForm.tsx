@@ -1,73 +1,36 @@
 import React, { useState } from "react";
-import { useForm, useFieldArray, Controller, FormProvider } from "react-hook-form";
+import {
+  useForm,
+  useFieldArray,
+  Controller,
+  FormProvider,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import type { z } from "zod";
+import { formSchema } from "../../../schema/schema";
+import CustomInput from "../../../components/CustomInput";
+import { statusOptions } from "./config";
 
 // Skema validasi Zod
-const phoneSchema = z.object({
-  type: z.string().min(1, "Tipe wajib diisi"),
-  number: z.number({ invalid_type_error: "Nomor wajib angka" }).min(10000000, "Nomor minimal 8 digit"),
-});
-const addressSchema = z.object({
-  street: z.string().min(1, "Jalan wajib diisi"),
-  city: z.string().min(1, "Kota wajib diisi"),
-  postalCode: z.string().min(1, "Kode pos wajib diisi"),
-});
-const formSchema = z.object({
-  formType: z.enum(["personal", "company"], { errorMap: () => ({ message: "Pilih tipe form" }) }),
-  name: z.string().min(3, "Nama minimal 3 karakter"),
-  age: z.number({ invalid_type_error: "Umur wajib angka" }).min(1, "Umur minimal 1 tahun"),
-  email: z.string().email("Email tidak valid"),
-  gender: z.enum(["Laki-laki", "Perempuan"], { errorMap: () => ({ message: "Pilih salah satu" }) }),
-  status: z.string().min(1, "Status wajib dipilih"),
-  hobbies: z.array(z.string()).min(1, "Pilih minimal satu hobi"),
-  favoriteColors: z.array(z.string()).min(1, "Pilih minimal satu warna"),
-  birthDate: z.string().min(1, "Tanggal wajib diisi"),
-  birthTime: z.string().min(1, "Waktu wajib diisi"),
-  dateRange: z.object({
-    from: z.string().min(1, "Tanggal mulai wajib diisi"),
-    to: z.string().min(1, "Tanggal akhir wajib diisi"),
-  }),
-  timeRange: z.object({
-    from: z.string().min(1, "Waktu mulai wajib diisi"),
-    to: z.string().min(1, "Waktu akhir wajib diisi"),
-  }),
-  phones: z.array(phoneSchema).min(1, "Minimal 1 nomor telepon"),
-  addresses: z.array(addressSchema).min(1, "Minimal 1 alamat"),
-  agree: z.boolean().refine(val => val, "Harus setuju"),
-});
 
 type FormType = z.infer<typeof formSchema>;
 
-const statusOptions = [
-  { value: "", label: "Pilih status" },
-  { value: "mahasiswa", label: "Mahasiswa" },
-  { value: "karyawan", label: "Karyawan" },
-  { value: "wirausaha", label: "Wirausaha" },
-];
-
 const hobbyOptions = [
-  "Membaca", "Olahraga", "Musik", "Traveling", "Ngoding", "Memasak"
+  "Membaca",
+  "Olahraga",
+  "Musik",
+  "Traveling",
+  "Ngoding",
+  "Memasak",
 ];
 
-const colorOptions = [
-  "Merah", "Hijau", "Biru", "Kuning", "Hitam", "Putih"
-];
-
-// Custom Input Component
-const CustomInput = ({ label, error, ...props }: any) => (
-  <div>
-    <label className="block mb-1 text-white">{label}</label>
-    <input {...props} className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600" />
-    {error && <p className="text-red-400 text-sm">{error}</p>}
-  </div>
-);
+const colorOptions = ["Merah", "Hijau", "Biru", "Kuning", "Hitam", "Putih"];
 
 const steps = [
   "Tipe Form",
   "Data Diri",
   "Kontak & Preferensi",
-  "Alamat & Persetujuan"
+  "Alamat & Persetujuan",
 ];
 
 function AdvanceForm() {
@@ -94,7 +57,14 @@ function AdvanceForm() {
     mode: "onTouched",
   });
 
-  const { control, handleSubmit, formState: { errors }, watch, setValue, trigger } = methods;
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    watch,
+    setValue,
+    trigger,
+  } = methods;
   const phonesArray = useFieldArray({ control, name: "phones" });
   const addressesArray = useFieldArray({ control, name: "addresses" });
 
@@ -104,11 +74,14 @@ function AdvanceForm() {
 
   // Untuk multi select
   const handleMultiSelect = (field: string, value: string) => {
-    const arr = watch(field) || [];
+    const arr = watch(field as "hobbies" | "favoriteColors") || [];
     if (arr.includes(value)) {
-      setValue(field as any, arr.filter((v: string) => v !== value));
+      setValue(
+        field as "hobbies" | "favoriteColors",
+        (arr as string[]).filter((v) => v !== value)
+      );
     } else {
-      setValue(field as any, [...arr, value]);
+      setValue(field as "hobbies" | "favoriteColors", [...arr, value]);
     }
   };
 
@@ -116,15 +89,22 @@ function AdvanceForm() {
   const stepFields: (keyof FormType | (keyof FormType)[])[] = [
     "formType",
     ["name", "age", "email", "gender", "status"],
-    ["hobbies", "favoriteColors", "birthDate", "birthTime", "dateRange", "timeRange"],
-    ["phones", "addresses", "agree"]
+    [
+      "hobbies",
+      "favoriteColors",
+      "birthDate",
+      "birthTime",
+      "dateRange",
+      "timeRange",
+    ],
+    ["phones", "addresses", "agree"],
   ];
 
   // Fungsi untuk validasi step sebelum next
   const handleNext = async () => {
     const fields = stepFields[step];
     const fieldNames = Array.isArray(fields) ? fields : [fields];
-    const valid = await trigger(fieldNames as any);
+    const valid = await trigger(fieldNames as (keyof FormType)[]);
     if (valid) setStep(step + 1);
   };
 
@@ -133,12 +113,9 @@ function AdvanceForm() {
     e.preventDefault();
     const fields = stepFields[step];
     const fieldNames = Array.isArray(fields) ? fields : [fields];
-    const valid = await trigger(fieldNames as any);
+    const valid = await trigger(fieldNames as Array<keyof FormType>);
     if (valid) handleSubmit(onSubmit)();
   };
-
-  // Radio menentukan arah form (misal: jika company, field tertentu bisa diubah/ditambah)
-  const formType = watch("formType");
 
   return (
     <FormProvider {...methods}>
@@ -153,13 +130,25 @@ function AdvanceForm() {
             <div key={s} className="flex items-center">
               <div
                 className={`rounded-full w-8 h-8 flex items-center justify-center font-bold
-                  ${step === idx ? "bg-blue-600 text-white" : "bg-gray-600 text-gray-200"}
+                  ${
+                    step === idx
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-600 text-gray-200"
+                  }
                 `}
               >
                 {idx + 1}
               </div>
-              <span className={`ml-2 ${step === idx ? "text-blue-400" : "text-gray-300"}`}>{s}</span>
-              {idx < steps.length - 1 && <span className="mx-2 text-gray-400">→</span>}
+              <span
+                className={`ml-2 ${
+                  step === idx ? "text-blue-400" : "text-gray-300"
+                }`}
+              >
+                {s}
+              </span>
+              {idx < steps.length - 1 && (
+                <span className="mx-2 text-gray-400">→</span>
+              )}
             </div>
           ))}
         </div>
@@ -196,7 +185,11 @@ function AdvanceForm() {
                   </div>
                 )}
               />
-              {errors.formType && <p className="text-red-400 text-sm">{errors.formType.message}</p>}
+              {errors.formType && (
+                <p className="text-red-400 text-sm">
+                  {errors.formType.message}
+                </p>
+              )}
             </div>
             <div className="flex gap-4">
               <button
@@ -216,7 +209,11 @@ function AdvanceForm() {
               name="name"
               control={control}
               render={({ field }) => (
-                <CustomInput label="Nama Lengkap *" error={errors.name?.message} {...field} />
+                <CustomInput
+                  label="Nama Lengkap *"
+                  error={errors.name?.message}
+                  {...field}
+                />
               )}
             />
             <Controller
@@ -228,7 +225,7 @@ function AdvanceForm() {
                   type="number"
                   error={errors.age?.message}
                   {...field}
-                  onChange={e => field.onChange(Number(e.target.value))}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
                 />
               )}
             />
@@ -236,7 +233,12 @@ function AdvanceForm() {
               name="email"
               control={control}
               render={({ field }) => (
-                <CustomInput label="Email *" type="email" error={errors.email?.message} {...field} />
+                <CustomInput
+                  label="Email *"
+                  type="email"
+                  error={errors.email?.message}
+                  {...field}
+                />
               )}
             />
             <div>
@@ -271,7 +273,9 @@ function AdvanceForm() {
                   )}
                 />
               </div>
-              {errors.gender && <p className="text-red-400 text-sm">{errors.gender.message}</p>}
+              {errors.gender && (
+                <p className="text-red-400 text-sm">{errors.gender.message}</p>
+              )}
             </div>
             <Controller
               name="status"
@@ -283,11 +287,17 @@ function AdvanceForm() {
                     {...field}
                     className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600"
                   >
-                    {statusOptions.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    {statusOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
                     ))}
                   </select>
-                  {errors.status && <p className="text-red-400 text-sm">{errors.status.message}</p>}
+                  {errors.status && (
+                    <p className="text-red-400 text-sm">
+                      {errors.status.message}
+                    </p>
+                  )}
                 </div>
               )}
             />
@@ -315,7 +325,7 @@ function AdvanceForm() {
             <div>
               <label className="block mb-1 text-white">Hobi *</label>
               <div className="flex flex-wrap gap-4">
-                {hobbyOptions.map(hobby => (
+                {hobbyOptions.map((hobby) => (
                   <label key={hobby} className="text-white">
                     <input
                       type="checkbox"
@@ -327,37 +337,59 @@ function AdvanceForm() {
                   </label>
                 ))}
               </div>
-              {errors.hobbies && <p className="text-red-400 text-sm">{errors.hobbies.message as string}</p>}
+              {errors.hobbies && (
+                <p className="text-red-400 text-sm">
+                  {errors.hobbies.message as string}
+                </p>
+              )}
             </div>
             <div>
-              <label className="block mb-1 text-white">Warna Favorit (Multi Select) *</label>
+              <label className="block mb-1 text-white">
+                Warna Favorit (Multi Select) *
+              </label>
               <div className="flex flex-wrap gap-4">
-                {colorOptions.map(color => (
+                {colorOptions.map((color) => (
                   <label key={color} className="text-white">
                     <input
                       type="checkbox"
                       checked={watch("favoriteColors")?.includes(color)}
-                      onChange={() => handleMultiSelect("favoriteColors", color)}
+                      onChange={() =>
+                        handleMultiSelect("favoriteColors", color)
+                      }
                       className="mr-2"
                     />
                     {color}
                   </label>
                 ))}
               </div>
-              {errors.favoriteColors && <p className="text-red-400 text-sm">{errors.favoriteColors.message as string}</p>}
+              {errors.favoriteColors && (
+                <p className="text-red-400 text-sm">
+                  {errors.favoriteColors.message as string}
+                </p>
+              )}
             </div>
             <Controller
               name="birthDate"
               control={control}
               render={({ field }) => (
-                <CustomInput label="Tanggal Lahir *" type="date" error={errors.birthDate?.message} {...field} />
+                <CustomInput
+                  label="Tanggal Lahir *"
+                  type="date"
+                  error={errors.birthDate?.message}
+                  {...field}
+                />
               )}
             />
             <Controller
               name="birthTime"
               control={control}
               render={({ field }) => (
-                <CustomInput label="Waktu Lahir *" type="time" error={errors.birthTime?.message} {...field} />
+                <CustomInput
+                  label="Waktu Lahir *"
+                  type="time"
+                  error={errors.birthTime?.message}
+                  {...field}
+                />
               )}
             />
             {/* Date Range */}
@@ -366,14 +398,24 @@ function AdvanceForm() {
                 name="dateRange.from"
                 control={control}
                 render={({ field }) => (
-                  <CustomInput label="Tanggal Mulai *" type="date" error={errors.dateRange?.from?.message} {...field} />
+                  <CustomInput
+                    label="Tanggal Mulai *"
+                    type="date"
+                    error={errors.dateRange?.from?.message}
+                    {...field}
+                  />
                 )}
               />
               <Controller
                 name="dateRange.to"
                 control={control}
                 render={({ field }) => (
-                  <CustomInput label="Tanggal Akhir *" type="date" error={errors.dateRange?.to?.message} {...field} />
+                  <CustomInput
+                    label="Tanggal Akhir *"
+                    type="date"
+                    error={errors.dateRange?.to?.message}
+                    {...field}
+                  />
                 )}
               />
             </div>
@@ -383,14 +425,24 @@ function AdvanceForm() {
                 name="timeRange.from"
                 control={control}
                 render={({ field }) => (
-                  <CustomInput label="Waktu Mulai *" type="time" error={errors.timeRange?.from?.message} {...field} />
+                  <CustomInput
+                    label="Waktu Mulai *"
+                    type="time"
+                    error={errors.timeRange?.from?.message}
+                    {...field}
+                  />
                 )}
               />
               <Controller
                 name="timeRange.to"
                 control={control}
                 render={({ field }) => (
-                  <CustomInput label="Waktu Akhir *" type="time" error={errors.timeRange?.to?.message} {...field} />
+                  <CustomInput
+                    label="Waktu Akhir *"
+                    type="time"
+                    error={errors.timeRange?.to?.message}
+                    {...field}
+                  />
                 )}
               />
             </div>
@@ -424,7 +476,16 @@ function AdvanceForm() {
                     name={`phones.${idx}.type`}
                     control={control}
                     render={({ field }) => (
-                      <CustomInput label="Tipe" error={errors.phones?.[idx]?.type?.message} {...field} />
+                      <CustomInput
+                        label="Tipe"
+                        error={
+                          typeof errors.phones?.[idx]?.type === "object"
+                            ? (errors.phones[idx]?.type as { message?: string })
+                                ?.message
+                            : undefined
+                        }
+                        {...field}
+                      />
                     )}
                   />
                   <Controller
@@ -436,17 +497,29 @@ function AdvanceForm() {
                         type="number"
                         error={errors.phones?.[idx]?.number?.message}
                         {...field}
-                        onChange={e => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
                       />
                     )}
                   />
-                  <button type="button" onClick={() => phonesArray.remove(idx)} className="text-red-400">Hapus</button>
+                  <button
+                    type="button"
+                    onClick={() => phonesArray.remove(idx)}
+                    className="text-red-400"
+                  >
+                    Hapus
+                  </button>
                 </div>
               ))}
-              <button type="button" onClick={() => phonesArray.append({ type: "", number: undefined })} className="bg-green-600 text-white px-2 py-1 rounded">
+              <button
+                type="button"
+                onClick={() => phonesArray.append({ type: "", number: 0 })}
+                className="bg-green-600 text-white px-2 py-1 rounded"
+              >
                 Tambah Nomor
               </button>
-              {typeof errors.phones?.message === "string" && <p className="text-red-400 text-sm">{errors.phones?.message}</p>}
+              {typeof errors.phones?.message === "string" && (
+                <p className="text-red-400 text-sm">{errors.phones?.message}</p>
+              )}
             </div>
             {/* Dynamic Addresses */}
             <div>
@@ -457,43 +530,84 @@ function AdvanceForm() {
                     name={`addresses.${idx}.street`}
                     control={control}
                     render={({ field }) => (
-                      <CustomInput label="Jalan" error={errors.addresses?.[idx]?.street?.message} {...field} />
+                      <CustomInput
+                        label="Jalan"
+                        error={errors.addresses?.[idx]?.street?.message}
+                        {...field}
+                      />
                     )}
                   />
                   <Controller
                     name={`addresses.${idx}.city`}
                     control={control}
                     render={({ field }) => (
-                      <CustomInput label="Kota" error={errors.addresses?.[idx]?.city?.message} {...field} />
+                      <CustomInput
+                        label="Kota"
+                        error={errors.addresses?.[idx]?.city?.message}
+                        {...field}
+                      />
                     )}
                   />
                   <Controller
                     name={`addresses.${idx}.postalCode`}
                     control={control}
                     render={({ field }) => (
-                      <CustomInput label="Kode Pos" error={errors.addresses?.[idx]?.postalCode?.message} {...field} />
+                      <CustomInput
+                        label="Kode Pos"
+                        error={errors.addresses?.[idx]?.postalCode?.message}
+                        {...field}
+                      />
                     )}
                   />
-                  <button type="button" onClick={() => addressesArray.remove(idx)} className="text-red-400">Hapus</button>
+                  <button
+                    type="button"
+                    onClick={() => addressesArray.remove(idx)}
+                    className="text-red-400"
+                  >
+                    Hapus
+                  </button>
                 </div>
               ))}
-              <button type="button" onClick={() => addressesArray.append({ street: "", city: "", postalCode: "" })} className="bg-green-600 text-white px-2 py-1 rounded">
+              <button
+                type="button"
+                onClick={() =>
+                  addressesArray.append({
+                    street: "",
+                    city: "",
+                    postalCode: "",
+                  })
+                }
+                className="bg-green-600 text-white px-2 py-1 rounded"
+              >
                 Tambah Alamat
               </button>
-              {typeof errors.addresses?.message === "string" && <p className="text-red-400 text-sm">{errors.addresses?.message}</p>}
+              {typeof errors.addresses?.message === "string" && (
+                <p className="text-red-400 text-sm">
+                  {errors.addresses?.message}
+                </p>
+              )}
             </div>
             {/* Agreement */}
             <Controller
               name="agree"
               control={control}
-              render={({ field }) => (
-                <label className="inline-flex items-center text-white">
-                  <input type="checkbox" {...field} checked={field.value} className="mr-2" />
-                  Saya setuju dengan syarat & ketentuan *
-                </label>
-              )}
+              render={({ field }) => {
+                return (
+                  <label className="inline-flex items-center text-white">
+                    <input
+                      type="checkbox"
+                      onChange={field.onChange}
+                      checked={field.value}
+                      className="mr-2"
+                    />
+                    Saya setuju dengan syarat & ketentuan *
+                  </label>
+                );
+              }}
             />
-            {errors.agree && <p className="text-red-400 text-sm">{errors.agree.message}</p>}
+            {errors.agree && (
+              <p className="text-red-400 text-sm">{errors.agree.message}</p>
+            )}
             <div className="flex gap-4">
               <button
                 type="button"
@@ -502,7 +616,10 @@ function AdvanceForm() {
               >
                 Sebelumnya
               </button>
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
                 Submit
               </button>
             </div>

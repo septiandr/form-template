@@ -2,7 +2,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import SimpleForm from "../pages/form/SimpleForm";
 import MediumForm from "../pages/form/MediumForm";
-import AdvanceForm from "../pages/form/AdvanceForm";
+import AdvanceForm from "../pages/form/AdvancedForm/AdvanceForm";
 import App from "../App";
 
 
