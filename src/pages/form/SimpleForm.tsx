@@ -25,6 +25,7 @@ function formatNumber(value: string) {
   return cleaned.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
+
 function SimpleForm() {
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<SimpleFormValues>();
 
