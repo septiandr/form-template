@@ -7,30 +7,26 @@ import {
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { formSchema } from "../../../schema/schema";
+import { formSchema } from "./schema";
 import CustomInput from "../../../components/CustomInput";
-import { statusOptions } from "./config";
+import { colorOptions, hobbyOptions, statusOptions, steps } from "./config";
 
 // Skema validasi Zod
-
 type FormType = z.infer<typeof formSchema>;
 
-const hobbyOptions = [
-  "Membaca",
-  "Olahraga",
-  "Musik",
-  "Traveling",
-  "Ngoding",
-  "Memasak",
-];
-
-const colorOptions = ["Merah", "Hijau", "Biru", "Kuning", "Hitam", "Putih"];
-
-const steps = [
-  "Tipe Form",
-  "Data Diri",
-  "Kontak & Preferensi",
-  "Alamat & Persetujuan",
+// Step fields mapping
+const stepFields: (keyof FormType | (keyof FormType)[])[] = [
+  "formType",
+  ["name", "age", "email", "gender", "status"],
+  [
+    "hobbies",
+    "favoriteColors",
+    "birthDate",
+    "birthTime",
+    "dateRange",
+    "timeRange",
+  ],
+  ["phones", "addresses", "agree"],
 ];
 
 function AdvanceForm() {
@@ -84,21 +80,6 @@ function AdvanceForm() {
       setValue(field as "hobbies" | "favoriteColors", [...arr, value]);
     }
   };
-
-  // Step fields mapping
-  const stepFields: (keyof FormType | (keyof FormType)[])[] = [
-    "formType",
-    ["name", "age", "email", "gender", "status"],
-    [
-      "hobbies",
-      "favoriteColors",
-      "birthDate",
-      "birthTime",
-      "dateRange",
-      "timeRange",
-    ],
-    ["phones", "addresses", "agree"],
-  ];
 
   // Fungsi untuk validasi step sebelum next
   const handleNext = async () => {
